@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 
 class EuropeanOptionData():
     def __init__(self,t_range,S_range,K,r, sigma):
@@ -55,8 +56,15 @@ class EuropeanOptionData():
         bvp_y2_tensor = torch.from_numpy(bvp_y2).float()
         return bvp_x1_tensor,bvp_y1_tensor,bvp_x2_tensor,bvp_y2_tensor
     
+    def normalize(self,x):
+        min_values = torch.tensor([self.t_range[0],self.S_range[0]])
+        max_values = torch.tensor([self.t_range[1],self.S_range[1]])
+        normalized_tensor = (2 * (x - min_values) / (max_values - min_values)) - 1
+        return normalized_tensor
+    
     def get_analytical_soln(self, S, t):
-        t2m = t  # Time to maturity (assumed in years)
+        T = self.t_range[-1]
+        t2m = T-t  # Time to maturity (assumed in years)
         d1 = (torch.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * t2m) / (self.sigma * torch.sqrt(t2m))
         d2 = d1 - self.sigma * torch.sqrt(t2m)
         # Normal cumulative distribution function (CDF)
@@ -66,3 +74,39 @@ class EuropeanOptionData():
         # Calculate the option price
         C = S * Nd1 - self.K * Nd2 * torch.exp(-self.r * t2m)
         return C
+    
+
+def plot_solution(model,euro_call_data,i, experiment_dir, close=True):
+  s = np.linspace(euro_call_data.S_range[0], euro_call_data.S_range[1], 50)
+  t = np.linspace(euro_call_data.t_range[0], euro_call_data.t_range[1], 50)
+  s_grid, t_grid = np.meshgrid(s, t)
+  s_flat = s_grid.flatten()
+  t_flat = t_grid.flatten()
+  # Create a 2D tensor from the flattened arrays
+  X_test = torch.tensor(np.column_stack((t_flat, s_flat)), dtype=torch.float)
+  y_analytical_test = euro_call_data.get_analytical_soln(X_test[:,1],X_test[:,0])
+  model.eval();
+  with torch.no_grad():
+    y_pinn_test = model(X_test)
+  # Create the 3D plot
+  fig = plt.figure(figsize=(14,7))
+  ax = fig.add_subplot(121, projection='3d')
+  ax.plot_surface(s_grid, t_grid, y_analytical_test.detach().numpy().reshape(s_grid.shape), cmap = "viridis")
+  ax.set_title("Analytical Soln")
+  ax.set_xlabel("Spot Price")
+  ax.set_ylabel("Time to expiry")
+  ax.set_zlabel("Call price")
+  ax.view_init(elev=20, azim=-120)
+  ax = fig.add_subplot(122, projection='3d')
+  ax.plot_surface(s_grid, t_grid, y_pinn_test.detach().numpy().reshape(s_grid.shape), cmap = "viridis")
+  ax.set_title("PINN prediction")
+  ax.set_xlabel("Spot Price")
+  ax.set_ylabel("Time to expiry")
+  ax.set_zlabel("Call price")
+  ax.view_init(elev=20, azim=-120)
+  if close:
+    plt.savefig(experiment_dir+f"/true_vs_pred_{i}.jpg")
+    plt.close()
+  else:
+    plt.savefig(experiment_dir+f"/true_vs_pred_{i}.jpg")
+  model.train();    
