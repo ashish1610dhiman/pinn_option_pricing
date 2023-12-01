@@ -42,7 +42,7 @@ class EuropeanOptionData():
         T = self.t_range[-1]
         X1 = np.concatenate([np.random.uniform(*self.t_range, (int(n*r1), 1)),
                         self.S_range[0] * np.ones((int(n*r1), 1))], axis=1)
-        y1 = np.zeros((n, 1))
+        y1 = np.zeros((int(n*r1), 1))
         X2 = np.concatenate([np.random.uniform(*self.t_range, (int(r2*n), 1)),
                         self.S_range[-1] * np.ones((int(r2*n), 1))], axis=1)
         y2 = (self.S_range[-1] - self.K*np.exp(-self.r*(T-X2[:, 0].reshape(-1)))).reshape(-1, 1)
@@ -91,14 +91,14 @@ def plot_solution(model,euro_call_data,i, experiment_dir, close=True):
   # Create the 3D plot
   fig = plt.figure(figsize=(14,7))
   ax = fig.add_subplot(121, projection='3d')
-  ax.plot_surface(s_grid, t_grid, y_analytical_test.detach().numpy().reshape(s_grid.shape), cmap = "viridis")
+  ax.plot_surface(s_grid, t_grid, y_analytical_test.cpu().numpy().reshape(s_grid.shape), cmap = "viridis")
   ax.set_title("Analytical Soln")
   ax.set_xlabel("Spot Price")
   ax.set_ylabel("Current time")
   ax.set_zlabel("Call price")
   ax.view_init(elev=20, azim=-120)
   ax = fig.add_subplot(122, projection='3d')
-  ax.plot_surface(s_grid, t_grid, y_pinn_test.detach().numpy().reshape(s_grid.shape), cmap = "viridis")
+  ax.plot_surface(s_grid, t_grid, y_pinn_test.cpu().numpy().reshape(s_grid.shape), cmap = "viridis")
   ax.set_title("PINN prediction")
   ax.set_xlabel("Spot Price")
   ax.set_ylabel("Current time")
