@@ -25,14 +25,14 @@ class EuropeanOptionData():
         y1 = torch.from_numpy(y1).float()
         return X1,y1
     
-    def get_ivp_data(self,n):
-        X = np.concatenate([np.ones((n, 1)), #all at expiry time
-                    np.random.uniform(*self.S_range, (n, 1))], axis=1)
+    def get_ivp_data(self,n,r):
+        X = np.concatenate([np.ones((int(r*n), 1)), #all at expiry time
+                    np.random.uniform(*self.S_range, (int(r*n), 1))], axis=1)
         y = self._gs(X[:, 1]).reshape(-1, 1)
         return X, y
     
-    def get_ivp_data_tensor(self,N_sample):
-        ivp_x, ivp_y = self.get_ivp_data(N_sample)
+    def get_ivp_data_tensor(self,N_sample,r=1):
+        ivp_x, ivp_y = self.get_ivp_data(N_sample,r)
         ivp_x_tensor = torch.from_numpy(ivp_x).float()
         ivp_y_tensor = torch.from_numpy(ivp_y).float()
         return ivp_x_tensor,ivp_y_tensor
@@ -41,10 +41,10 @@ class EuropeanOptionData():
     def get_bvp_data(self,n,r1=1,r2=1):
         T = self.t_range[-1]
         X1 = np.concatenate([np.random.uniform(*self.t_range, (int(n*r1), 1)),
-                        self.S_range[0] * np.ones((n, 1))], axis=1)
+                        self.S_range[0] * np.ones((int(n*r1), 1))], axis=1)
         y1 = np.zeros((n, 1))
         X2 = np.concatenate([np.random.uniform(*self.t_range, (int(r2*n), 1)),
-                        self.S_range[-1] * np.ones((n, 1))], axis=1)
+                        self.S_range[-1] * np.ones((int(r2*n), 1))], axis=1)
         y2 = (self.S_range[-1] - self.K*np.exp(-self.r*(T-X2[:, 0].reshape(-1)))).reshape(-1, 1)
         return X1, y1, X2, y2
     
