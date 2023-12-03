@@ -81,7 +81,7 @@ class AmericanPutData():
         res = torch.tensor([self._get_analytical_soln(S[i],t[i],n=n) for i in range(len(S))])
         return res
     
-def plot_solution(model,euro_call_data,i, experiment_dir, close=True):
+def plot_solution(model,euro_call_data,i, experiment_dir, close=True, plot_analytical = False):
   s = np.linspace(euro_call_data.S_range[0], euro_call_data.S_range[1], 50)
   t = np.linspace(euro_call_data.t_range[0], euro_call_data.t_range[1], 50)
   s_grid, t_grid = np.meshgrid(s, t)
@@ -95,13 +95,14 @@ def plot_solution(model,euro_call_data,i, experiment_dir, close=True):
     y_pinn_test = model(X_test)
   # Create the 3D plot
   fig = plt.figure(figsize=(14,7))
-  ax = fig.add_subplot(121, projection='3d')
-  ax.plot_surface(s_grid, t_grid, y_analytical_test.cpu().numpy().reshape(s_grid.shape), cmap = "viridis")
-  ax.set_title("Analytical Soln")
-  ax.set_xlabel("Spot Price")
-  ax.set_ylabel("Current time")
-  ax.set_zlabel("Call price")
-  ax.view_init(elev=20, azim=60)
+  if plot_analytical:
+    ax = fig.add_subplot(121, projection='3d')
+    ax.plot_surface(s_grid, t_grid, y_analytical_test.cpu().numpy().reshape(s_grid.shape), cmap = "viridis")
+    ax.set_title("Analytical Soln")
+    ax.set_xlabel("Spot Price")
+    ax.set_ylabel("Current time")
+    ax.set_zlabel("Call price")
+    ax.view_init(elev=20, azim=60)
   ax = fig.add_subplot(122, projection='3d')
   ax.plot_surface(s_grid, t_grid, y_pinn_test.cpu().numpy().reshape(s_grid.shape), cmap = "viridis")
   ax.set_title("PINN prediction")
