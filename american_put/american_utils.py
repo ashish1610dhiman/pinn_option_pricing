@@ -63,10 +63,23 @@ class AmericanPutData():
         normalized_tensor = (2 * (x - min_values) / (max_values - min_values)) - 1
         return normalized_tensor
     
-    def get_analytical_soln(self, S, t):
-        #TODO
-        pass
-        return torch.tensor(0) 
+    def _get_analytical_soln(self, S, t, n= 250):
+        T = self.t_range[-1]-t
+        delta_t = T / n
+        u = torch.exp(self.sigma * torch.sqrt(delta_t))
+        d = 1 / u
+        p = (torch.exp(self.r * delta_t) - d) / (u - d)
+        # Initialize option values at maturity
+        option_values = torch.maximum(self.K - S * u**torch.arange(n+1) * d**(n-torch.arange(n+1)), torch.zeros(n+1))
+        # Backward induction
+        for i in range(n-1, -1, -1):
+            option_values = torch.maximum((self.K - S * u**torch.arange(i+1) * d**(i-torch.arange(i+1))),
+                                   torch.exp(-self.r * delta_t) * (p * option_values[:i+1] + (1 - p) * option_values[1:i+2])) 
+        return option_values[0]
+    
+    def get_analytical_soln(self, S, t, n= 250):
+        res = torch.tensor([self._get_analytical_soln(S[i],t[i],n=n) for i in range(len(S))])
+        return res
     
 def plot_solution(model,euro_call_data,i, experiment_dir, close=True):
   s = np.linspace(euro_call_data.S_range[0], euro_call_data.S_range[1], 50)
@@ -88,14 +101,14 @@ def plot_solution(model,euro_call_data,i, experiment_dir, close=True):
   ax.set_xlabel("Spot Price")
   ax.set_ylabel("Current time")
   ax.set_zlabel("Call price")
-  ax.view_init(elev=20, azim=-120)
+  ax.view_init(elev=20, azim=60)
   ax = fig.add_subplot(122, projection='3d')
   ax.plot_surface(s_grid, t_grid, y_pinn_test.cpu().numpy().reshape(s_grid.shape), cmap = "viridis")
   ax.set_title("PINN prediction")
   ax.set_xlabel("Spot Price")
   ax.set_ylabel("Current time")
   ax.set_zlabel("Call price")
-  ax.view_init(elev=20, azim=-120)
+  ax.view_init(elev=20, azim=60)
   if close:
     plt.savefig(experiment_dir+f"/true_vs_pred_{i}.jpg")
     plt.close()
