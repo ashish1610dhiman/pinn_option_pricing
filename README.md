@@ -1,2 +1,2 @@
-# pinn_option_pricing
-Scientific Machine Learning for Option Pricing
+# Scientific Machine Learning for Option Pricing
+We apply a physics-informed deep-learning approach the PINN approach to the Black-Scholes equation for pricing American and European options. We test our approach on both simulated as well as real market data, compare it to analytical/numerical benchmarks. Our model is able to accurately capture the price behaviour on simulation data, while also exhibiting reasonable performance for market data. We also experiment with the architecture and learning process of our PINN model to provide more understanding of convergence and stability issues that impact performance.
